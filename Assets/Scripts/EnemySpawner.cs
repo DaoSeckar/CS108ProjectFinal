@@ -5,8 +5,16 @@ using UnityEngine;
 public class EnemySpawner : MonoBehaviour
 {
     public GameObject[] EnemyPrefabs; // Array to store different enemy prefabs
+    public GameObject EnemyBoss;
 
-    float maxSpawnRateInSeconds = 5f;
+    float maxSpawnRateInSeconds = 2f;
+    int currentWave = 0;
+
+    public void ResetEnemies()
+    {
+        currentWave = 0;
+        maxSpawnRateInSeconds = 2f;
+    }
 
     void Start()
     {
@@ -27,7 +35,33 @@ public class EnemySpawner : MonoBehaviour
         GameObject anEnemy = (GameObject)Instantiate(selectedEnemy);
         anEnemy.transform.position = new Vector2(Random.Range(min.x, max.x), max.y);
 
+
+        currentWave++;
+        if (currentWave >= 10)
+        {
+            UnscheduleEnemySpawner();
+            currentWave = 0;
+
+            Invoke("SpawnBoss",3f);
+
+
+            return;
+        }
+
         ScheduleNextEnemySpawn();
+
+       
+    }
+
+    void SpawnBoss()
+    {
+        if (FindObjectOfType<GameManager>().GMState == GameManager.GameManagerState.GameOver) return;
+
+        Vector2 min = Camera.main.ViewportToWorldPoint(new Vector2(0, 0));
+        Vector2 max = Camera.main.ViewportToWorldPoint(new Vector2(1, 1));
+        GameObject selectedEnemy = EnemyBoss;
+        GameObject anEnemy = (GameObject)Instantiate(selectedEnemy);
+        anEnemy.transform.position = new Vector2(max.x / 2f, max.y / 2f);
     }
 
     void ScheduleNextEnemySpawn()
@@ -55,6 +89,8 @@ public class EnemySpawner : MonoBehaviour
 
     public void ScheduleEnemySpawner()
     {
+        if (FindObjectOfType<GameManager>().GMState == GameManager.GameManagerState.GameOver) return;
+
         Invoke("SpawnEnemy", maxSpawnRateInSeconds);
 
         InvokeRepeating("IncreaseSpawnRate", 0f, 30f);

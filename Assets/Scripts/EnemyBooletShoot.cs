@@ -5,18 +5,22 @@ using UnityEngine;
 public class EnemyBooletShoot : MonoBehaviour
 {
     public GameObject EnemyBullet;
+    public bool IsEnemy = false;
     // Start is called before the first frame update
     void Start()
     {
-
+        if (IsEnemy)
+        {
+            //InvokeRepeating("FireEnemyBullet", 1f,1f);
+        }
+        else
         Invoke("FireEnemyBullet", 1f);
 
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Shoot()
     {
-
+        FireEnemyBullet();
     }
 
     void FireEnemyBullet()

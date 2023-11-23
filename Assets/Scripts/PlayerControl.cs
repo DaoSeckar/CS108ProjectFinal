@@ -11,24 +11,38 @@ public class PlayerControl : MonoBehaviour
 	public GameObject PlayerBoolets;
 	public GameObject BulletPlayerPos;
 	public GameObject Explosion;
+    public GameObject poweruoBar;
 
-	public TextMeshProUGUI LivesUIText;
+    public TextMeshProUGUI LivesUIText;
+    public TextMeshProUGUI SpecialUIText;
 
-	const int MaxLives = 3;
-	int lives;
+    const int MaxLives = 3;
+    const int MaxSpecial = 3;
+    int lives;
+	int specials;
 
 	public float speed;
-
+	public bool IsPowerup = false;
+	float CurrentFireRate = 0f;
 	public void Init()
     {
-		lives = MaxLives;
+        specials = MaxSpecial;
+        lives = MaxLives;
 
 		LivesUIText.text = lives.ToString();
+		SetSpecial();
 
-		transform.position = new Vector2(0, -4);
 
-		gameObject.SetActive(true);
+        transform.position = new Vector2(0, -4);
+        IsPowerup = false;
+        CurrentFireRate = 0f;
+        gameObject.SetActive(true);
     }
+
+	void SetSpecial()
+	{
+		SpecialUIText.text = "x"+ specials.ToString();
+	}
 
 	// Use this for initialization
 	void Start()
@@ -39,13 +53,23 @@ public class PlayerControl : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
-		if(Input.GetKeyDown("space"))
+		if(Input.GetKeyDown("space") && !IsPowerup)
         {
-			GetComponent<AudioSource>().Play();
-
-			GameObject bullet01 = (GameObject)Instantiate(PlayerBoolets);
-			bullet01.transform.position = BulletPlayerPos.transform.position;
+			Fire();
         }
+        else if (Input.GetKeyDown(KeyCode.V) && !IsPowerup)
+        {
+            Fire(true);
+        }
+        else if (IsPowerup && CurrentFireRate >= .05f)
+		{
+			CurrentFireRate = 0;
+            Fire();
+		}
+		else
+		{
+			CurrentFireRate += Time.deltaTime;
+		}
 
 		float x = Input.GetAxisRaw("Horizontal");//the value will be -1, 0 or 1 (for left, no input, and right)
 		float y = Input.GetAxisRaw("Vertical");//the value will be -1, 0 or 1 (for down, no input, and up)
@@ -57,7 +81,42 @@ public class PlayerControl : MonoBehaviour
 		Move(direction);
 	}
 
-	void Move(Vector2 direction)
+	void Fire(bool isSpecial=false)
+	{
+		if (isSpecial)
+		{
+			if (specials <= 0) return;
+			specials--;
+			SetSpecial();
+			Invoke("FillSpecial", 3);
+		}
+
+        GetComponent<AudioSource>().Play();
+        GameObject bullet01 = (GameObject)Instantiate(PlayerBoolets);
+        bullet01.transform.position = BulletPlayerPos.transform.position;
+		
+		if (isSpecial)
+		{
+            bullet01.transform.localScale *= 3;
+            bullet01.name = "SpecialBullet";
+        }
+		
+    }
+
+	void FillSpecial()
+	{
+        if (FindObjectOfType<GameManager>().GMState == GameManager.GameManagerState.GameOver) return;
+
+		if (specials < 3)
+		{
+			specials++;
+			SetSpecial();
+		}
+
+
+    }
+
+    void Move(Vector2 direction)
 	{
 		//find the screen limits to the player's movement (left, right, top and bottom edges of the screen)
 		Vector2 min = Camera.main.ViewportToWorldPoint(new Vector2(0, 0)); //this is the bottom-left point (corner) of the screen
@@ -94,10 +153,32 @@ public class PlayerControl : MonoBehaviour
 
 			if (lives == 0)
 			{
-				GameManagerGO.SetGameManagerState(GameManager.GameManagerState.GameOver);
+                poweruoBar.SetActive(false);
+                GameManagerGO.SetGameManagerState(GameManager.GameManagerState.GameOver);
 				gameObject.SetActive(false);
 			}
 		}
+
+
+		if (col.CompareTag("Powerup"))
+		{
+			PowerUp();
+			Destroy(col.gameObject);
+		}
+	}
+
+
+	void PowerUp()
+	{
+		IsPowerup = true;
+		poweruoBar.SetActive(true);
+		Invoke("PowerUpOff", 7);
+	}
+
+	void PowerUpOff()
+	{
+        poweruoBar.SetActive(false);
+        IsPowerup = false;
 	}
 
 	void PlayExplosion()

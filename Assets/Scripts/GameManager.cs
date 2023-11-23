@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour
         GameOver,
     }
 
-    GameManagerState GMState;
+    public GameManagerState GMState;
 
     // Start is called before the first frame update
     void Start()
@@ -48,6 +48,19 @@ public class GameManager : MonoBehaviour
 
                 GameOverGO.SetActive(true);
                 Invoke("ChangeToOpeningState", 3f);
+
+                var e = GameObject.FindGameObjectsWithTag("EnemyTag");
+                foreach (var item in e)
+                    Destroy(item.gameObject);
+
+
+                 e = GameObject.FindGameObjectsWithTag("Powerup");
+                foreach (var item in e)
+                    Destroy(item.gameObject);
+
+
+                FindObjectOfType<EnemySpawner>().ResetEnemies();
+
                 break;
         }
     }
